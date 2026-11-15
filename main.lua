@@ -851,6 +851,10 @@ local function buildFrame(context, model)
         bodyWidth = usableWidth,
         rowUnit = rowUnit, rowHeight = rowHeight,
         titleFont = titleFont, metaFont = metaFont,
+        -- The row's right-hand date is the second thing people read after the
+        -- title, so it is set at the title's size; only the project label and
+        -- the item count stay one step below.
+        dateFont = titleFont,
         headerFont = math.max(7, math.min(rowUnit * 0.32, headerHeight * 0.28)),
         dayFont = math.min(headerHeight * 0.54, rowUnit * 0.84),
         clock = now, parts = parts,
@@ -1106,11 +1110,11 @@ local function drawTaskRow(f, row, y, height)
 
     local metaLeft = f.right
     if timeText then
-        local timeWidth = textWidth(timeText, f.metaFont, false)
+        local timeWidth = textWidth(timeText, f.dateFont, false)
         local timeX = f.right - timeWidth
-        textMid(timeText, timeX, midY, f.metaFont, timeColor, timeWidth + 1, false,
+        textMid(timeText, timeX, midY, f.dateFont, timeColor, timeWidth + 1, false,
             titleAlpha)
-        metaLeft = timeX - f.metaFont * 0.9
+        metaLeft = timeX - f.dateFont * 0.9
     end
     if entry.itemsTotal > 0 then
         local itemText = l10n.tr("lua_widget.ticktick_tasks.items", entry.itemsDone,
