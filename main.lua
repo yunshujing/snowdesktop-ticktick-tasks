@@ -797,17 +797,21 @@ local function buildFrame(context, model)
         headerHeight, footerHeight = usableHeight, 0
         bodyTop, bodyBottom = top, top
         bodyHeight = usableHeight
-        titleFont = math.min(rowUnit * 0.46, usableHeight * 0.22)
-        metaFont = titleFont * 0.78
+        titleFont = math.min(rowUnit * 0.50, usableHeight * 0.24)
+        metaFont = titleFont * 0.76
         rowHeight = usableHeight
     else
         bodyHeight = math.max(1, bodyBottom - bodyTop)
-        titleFont = math.min(rowUnit * 0.46, bodyHeight * 0.26, usableHeight * 0.15,
-            usableWidth * 0.042)
-        metaFont = math.max(titleFont * 0.66,
-            math.min(titleFont * 0.80, rowUnit * 0.33, headerHeight * 0.24,
-                usableWidth * 0.030))
-        rowHeight = clamp(rowUnit * 1.05, titleFont * 1.80, bodyHeight / 2.4)
+        -- Row type is capped by the row unit and by the width: a tall narrow
+        -- card must not get headline rows, and a wide one must not get
+        -- billboard-size titles. The date keeps a visible step below the
+        -- title (0.76) instead of matching it, so the eye lands on the task.
+        titleFont = math.min(rowUnit * 0.50, bodyHeight * 0.28, usableHeight * 0.16,
+            usableWidth * 0.047)
+        metaFont = math.max(titleFont * 0.62,
+            math.min(titleFont * 0.76, rowUnit * 0.36, headerHeight * 0.26,
+                usableWidth * 0.033))
+        rowHeight = clamp(rowUnit * 1.02, titleFont * 1.72, bodyHeight / 2.35)
     end
 
     local parts = now.parts
@@ -847,8 +851,8 @@ local function buildFrame(context, model)
         bodyWidth = usableWidth,
         rowUnit = rowUnit, rowHeight = rowHeight,
         titleFont = titleFont, metaFont = metaFont,
-        headerFont = math.max(7, math.min(rowUnit * 0.30, headerHeight * 0.26)),
-        dayFont = math.min(headerHeight * 0.52, rowUnit * 0.82),
+        headerFont = math.max(7, math.min(rowUnit * 0.32, headerHeight * 0.28)),
+        dayFont = math.min(headerHeight * 0.54, rowUnit * 0.84),
         clock = now, parts = parts,
         compact = compact,
         board = board, rows = rows,

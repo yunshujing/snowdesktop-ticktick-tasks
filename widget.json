@@ -10,7 +10,7 @@
   "license": "MIT",
   "name": "Tasks for TickTick",
   "nameKey": "lua_widget.ticktick_tasks.name",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Today's TickTick tasks, overdue items and the week ahead — check one off without leaving the desktop.",
   "descriptionKey": "lua_widget.ticktick_tasks.description",
   "preview": "preview.png",
