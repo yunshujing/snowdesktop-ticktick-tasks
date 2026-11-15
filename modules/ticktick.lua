@@ -178,7 +178,6 @@ local function normalizeTask(raw, projectId)
         end
     end
 
-    local repeatFlag = raw.repeatFlag
     local dueMs, dueDay = ticktick.parseDue(raw.dueDate)
     return {
         id = id,
@@ -192,13 +191,10 @@ local function normalizeTask(raw, projectId)
         -- Set only for a bare "YYYY-MM-DD": the calendar day the user picked,
         -- independent of the machine's time zone.
         dueDay = dueDay,
-        completedMs = ticktick.parseDue(raw.completedTime),
         itemsDone = itemsDone,
         itemsTotal = itemsTotal,
-        repeats = type(repeatFlag) == "string" and #repeatFlag > 0,
         sortOrder = tonumber(raw.sortOrder) or 0,
         columnId = type(raw.columnId) == "string" and raw.columnId or nil,
-        inbox = project:sub(1, 5) == "inbox",
     }
 end
 
@@ -211,7 +207,9 @@ local function normalizeProject(raw)
     local groupName = type(raw.groupName) == "string" and trim(raw.groupName) or nil
     return {
         id = id,
-        name = name == "" and id or name,
+        -- Keep an empty name empty: the UI has a localized "Untitled list"
+        -- fallback, and printing a raw ObjectId there reads like an id leak.
+        name = name,
         inbox = id:sub(1, 5) == "inbox",
         color = ticktick.parseHexColor(raw.color) or ticktick.fallbackColor(id),
         closed = raw.closed == true,
@@ -445,9 +443,11 @@ function ticktick.compose(state, options)
         end
     end
 
-    local order = {}
-    for id in pairs(counts) do order[#order + 1] = id end
-    table.sort(order, function(left, right)
+    -- Project tally, most active first; `order` above is the list index and is
+    -- still in scope here, so the tally gets its own name.
+    local orderList = {}
+    for id in pairs(counts) do orderList[#orderList + 1] = id end
+    table.sort(orderList, function(left, right)
         if counts[left] ~= counts[right] then return counts[left] > counts[right] end
         local leftProject = state.projects[left]
         local rightProject = state.projects[right]
@@ -462,7 +462,7 @@ function ticktick.compose(state, options)
         overdue = #overdue,
         capped = capped,
         counts = counts,
-        order = order,
+        order = orderList,
     }
 end
 

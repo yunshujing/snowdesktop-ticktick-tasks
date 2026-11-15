@@ -54,12 +54,6 @@ local MONTHS = {
 }
 
 local sorts = { "due", "priority", "manual", "project" }
-local sortKeys = {
-    due = "lua_widget.ticktick_tasks.sort_due",
-    priority = "lua_widget.ticktick_tasks.sort_priority",
-    manual = "lua_widget.ticktick_tasks.sort_manual",
-    project = "lua_widget.ticktick_tasks.sort_project",
-}
 
 local views = { "today", "week", "projects", "months" }
 local viewKeys = {
@@ -507,6 +501,7 @@ local function applyProjects(model, body)
     model.dataPending = queued
     model.syncing = queued > 0 or model.inFlight > 0
     model.parseFailed = 0
+    model.fetchFailed = 0
     rebuildState(model)
     if #list == 0 then
         model.loadedAt = time.now()
@@ -1129,15 +1124,24 @@ local function drawTaskRow(f, row, y, height)
     local titleFloor = f.bodyWidth * 0.45
     local roomForProject = metaLeft - titleX - titleFloor
     if projectText ~= "" and roomForProject > f.metaFont * 2.4 then
-        local projectWidth = math.min(textWidth(projectText, f.metaFont, false),
-            roomForProject - f.metaFont * 1.6)
-        if projectWidth > f.metaFont * 1.2 then
+        local natural = textWidth(projectText, f.metaFont, false)
+        local available = roomForProject - f.metaFont * 1.6
+        -- A short name that fits is always worth drawing; a long one only when
+        -- the space left shows enough of it to read. Three clipped characters
+        -- ("01.年…") look like a rendering bug, so that case keeps just the dot.
+        if natural <= available or available > f.metaFont * 4 then
+            local projectWidth = math.min(natural, available)
             local projectX = metaLeft - f.metaFont * 0.75 - projectWidth
             disc(projectX - f.metaFont * 0.62, midY, math.max(1.5, f.metaFont * 0.17),
                 project.color, 0.95 * titleAlpha)
             textMid(projectText, projectX, midY, f.metaFont, c.muted, projectWidth,
                 false, titleAlpha * 0.85)
             metaLeft = projectX - f.metaFont * 0.9
+        elseif available > f.metaFont * 0.8 then
+            -- Keep only the list's colour as the identity cue.
+            disc(metaLeft - f.metaFont * 1.1, midY,
+                math.max(1.5, f.metaFont * 0.17), project.color, 0.95 * titleAlpha)
+            metaLeft = metaLeft - f.metaFont * 1.8
         end
     end
 
@@ -1237,9 +1241,9 @@ local function drawFooter(f)
     elseif model.syncing or not model.loadedAt then
         statusText = l10n.tr("lua_widget.ticktick_tasks.status_syncing")
         statusColor = c.muted
-    elseif (model.parseFailed or 0) > 0 then
-        -- One list was too large to decode in a single callback; the rest of
-        -- the board is fine, so say "partly" instead of pretending all is well.
+    elseif (model.parseFailed or 0) + (model.fetchFailed or 0) > 0 then
+        -- One list could not be decoded or fetched; the rest of the board is
+        -- fine, so say "partly" instead of pretending all is well.
         statusText = l10n.tr("lua_widget.ticktick_tasks.status_partial")
         statusColor = c.warn
     else
@@ -1699,12 +1703,13 @@ local function drawFilterBoard(f)
                 local known = model.folders and model.folders[project.groupId]
                 folder = {
                     kind = "folder", id = project.groupId,
-                    name = known and known.name or "", count = 0,
+                    name = known and known.name or "", count = 0, ids = {},
                 }
                 folders[project.groupId] = folder
                 entries[#entries + 1] = folder
             end
             folder.count = folder.count + 1
+            folder.ids[#folder.ids + 1] = project.id
         end
         entries[#entries + 1] = { kind = "project", project = project,
             depth = project.groupId and 1 or 0 }
@@ -1730,9 +1735,31 @@ local function drawFilterBoard(f)
             local name = entry.name ~= "" and entry.name
                 or (cfg.folderLabel ~= "" and cfg.folderLabel
                     or l10n.tr("lua_widget.ticktick_tasks.filter_folder"))
-            textMid(name, f.left + f.metaFont * 0.4, cy, f.metaFont, c.faint, f.bodyWidth * 0.7, true)
-            textRight(l10n.formatNumber(entry.count), f.right - f.titleFont * 1.6, cy,
+            -- The folder row is a master switch, so it carries a tri-state box:
+            -- ticked when everything inside is visible, empty when everything
+            -- is hidden, and a dash for a mixed folder.
+            local hidden = 0
+            for position = 1, #entry.ids do
+                if cfg.off[entry.ids[position]] then hidden = hidden + 1 end
+            end
+            local box = math.min(rowHeight * 0.46, f.titleFont * 0.82)
+            local bx = f.right - box
+            textMid(name, f.left + f.metaFont * 0.4, cy, f.metaFont,
+                hidden == #entry.ids and c.faint or c.ink2,
+                f.bodyWidth * 0.7, true)
+            textRight(l10n.formatNumber(entry.count), bx - f.titleFont * 0.9, cy,
                 f.metaFont, c.faint, false, 0.85)
+            if hidden == #entry.ids then
+                ring(bx + box / 2, cy, box / 2, c.faint, f.hair * 1.5, 0.9)
+            else
+                draw.rect(bx, cy - box / 2, box, box, c.accent, box * 0.28, 0.95)
+                if hidden > 0 then
+                    draw.line(bx + box * 0.28, cy, bx + box * 0.72, cy,
+                        math.max(1, f.hair * 1.6), c.onAccent, 1)
+                else
+                    checkMark(bx + box / 2, cy, box * 0.62, c.onAccent, f.hair * 1.5, 1)
+                end
+            end
             local top = math.max(cy - rowHeight / 2, y)
             local bottom = math.min(cy + rowHeight / 2, f.bodyBottom)
             regionSpec({
@@ -1948,6 +1975,7 @@ local function setup(context)
         dataPending = 0,
         failures = 0,
         parseFailed = 0,
+        fetchFailed = 0,
         justConnected = false,
         projectsInFlight = false,
         syncStarted = nil,
@@ -1997,6 +2025,7 @@ local function resetData(model)
     model.dataPending = 0
     model.failures = 0
     model.parseFailed = 0
+    model.fetchFailed = 0
     model.loadedAt = nil
     model.error = nil
     model.errorDetail = nil
@@ -2182,7 +2211,9 @@ local function event(_context, model, value)
                 model.error = "auth"
                 model.errorDetail = "http" .. tostring(status)
             else
-                model.error = value.error or "network"
+                -- One list's request failed; the others still arrived. Count it
+                -- as a partial sync instead of painting the whole board offline.
+                model.fetchFailed = (model.fetchFailed or 0) + 1
                 model.errorDetail = value.error
             end
             model.dataPending = math.max(0, model.dataPending - 1)
@@ -2191,11 +2222,14 @@ local function event(_context, model, value)
                 if not model.error then
                     model.failures = 0
                     model.loadedAt = time.now()
-                    -- Every project failed to parse: that is a real error, and
-                    -- an empty board would otherwise read as "no tasks".
-                    if (model.parseFailed or 0) > 0
+                    local parseFailed = model.parseFailed or 0
+                    local fetchFailed = model.fetchFailed or 0
+                    -- Nothing loaded at all: that is a real error, and an empty
+                    -- board would otherwise read as "no tasks".
+                    if parseFailed + fetchFailed > 0
                         and (not model.state or #model.state.tasks == 0) then
-                        model.error = "parse"
+                        model.error = (parseFailed > 0 and fetchFailed == 0)
+                            and "parse" or "network"
                     elseif model.justConnected then
                         model.justConnected = false
                         local total = 0
@@ -2331,8 +2365,10 @@ local function event(_context, model, value)
             for index = 1, #targets do
                 if not off[targets[index]] then allOff = false end
             end
+            -- A folder row is a master switch: if everything inside is hidden,
+            -- one click brings it back; otherwise one click hides the folder.
             for index = 1, #targets do
-                if allOff then off[targets[index]] = true else off[targets[index]] = nil end
+                if allOff then off[targets[index]] = nil else off[targets[index]] = true end
             end
             writeOff(off)
             widget.invalidate()

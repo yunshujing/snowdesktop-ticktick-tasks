@@ -19,7 +19,7 @@ end
 local function task(overrides)
     local value = {
         id = "x", projectId = "p1", title = "t", open = true, allDay = false,
-        priority = 0, dueMs = 0, itemsDone = 0, itemsTotal = 0, repeats = false,
+        priority = 0, dueMs = 0, itemsDone = 0, itemsTotal = 0,
         sortOrder = 0, dayIdx = 0, hour = 9, min = 0,
     }
     for key, item in pairs(overrides or {}) do value[key] = item end
@@ -59,6 +59,7 @@ return {
         same(list[2].name, "Life", "name trimmed")
         same(list[2].color, ticktick.fallbackColor("pLife"), "colour fallback")
         same(list[3].inbox, true, "inbox by id prefix")
+        same(list[3].name, "", "empty name stays empty for the UI fallback")
     end,
 
     ["reads one project's tasks"] = function()
@@ -75,7 +76,6 @@ return {
         same(#tasks, 2, "completed task dropped")
         same(tasks[1].title, "Write", "title")
         same(tasks[1].itemsDone, 1, "done items")
-        same(tasks[1].repeats, true, "repeat flag")
         same(tasks[2].title, "Buy milk", "content as title")
         same(tasks[2].allDay, true, "open API allDay key")
     end,
