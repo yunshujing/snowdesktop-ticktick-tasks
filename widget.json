@@ -10,7 +10,7 @@
   "license": "MIT",
   "name": "Tasks for TickTick",
   "nameKey": "lua_widget.ticktick_tasks.name",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Today's TickTick tasks, overdue items and the week ahead — check one off without leaving the desktop.",
   "descriptionKey": "lua_widget.ticktick_tasks.description",
   "preview": "preview.png",
@@ -24,7 +24,7 @@
   "locales": {
     "en-US": {
       "lua_widget.ticktick_tasks.name": "Tasks for TickTick",
-      "lua_widget.ticktick_tasks.description": "Today's TickTick tasks, overdue items and the week ahead — check one off without leaving the desktop.",
+      "lua_widget.ticktick_tasks.description": "Today's TickTick tasks, overdue items and the week ahead — check one off without leaving the desktop.\n\nSource & releases: https://github.com/yunshujing/snowdesktop-ticktick-tasks",
       "lua_widget.ticktick_tasks.preset_frosted": "Frosted",
       "lua_widget.ticktick_tasks.preset_solid": "Solid",
       "lua_widget.ticktick_tasks.preset_clear": "Clear",
@@ -123,7 +123,7 @@
     },
     "zh-CN": {
       "lua_widget.ticktick_tasks.name": "滴答清单任务板",
-      "lua_widget.ticktick_tasks.description": "一眼看清滴答清单的今天：待办、逾期与本周安排，勾一下就能完成。",
+      "lua_widget.ticktick_tasks.description": "一眼看清滴答清单的今天：待办、逾期与本周安排，勾一下就能完成。\n\n项目主页：https://github.com/yunshujing/snowdesktop-ticktick-tasks",
       "lua_widget.ticktick_tasks.preset_frosted": "磨砂",
       "lua_widget.ticktick_tasks.preset_solid": "实色",
       "lua_widget.ticktick_tasks.preset_clear": "透明",
