@@ -1,0 +1,6 @@
+# Packed widget archive: published as a GitHub Release asset, not committed.
+*.snowwidget
+
+# OS noise
+Thumbs.db
+.DS_Store
