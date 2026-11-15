@@ -2382,7 +2382,7 @@ local function event(_context, model, value)
     elseif value.id == "view.week" then
         storage.set("view", "week")
         widget.invalidate()
-    elseif value.id == "view.set" then
+    elseif value.id == "view.set" or value.id:sub(1, 9) == "view.set:" then
         storage.set("view", oneOf(tostring(value.value or "today"), views, "today"))
         widget.invalidate()
     elseif value.id == "task.complete" then
@@ -2430,7 +2430,8 @@ local function menu(_context, model, request)
     }
     for index = 1, #views do
         items[#items + 1] = {
-            id = "view.set", value = views[index],
+            -- Unique leaf ids: the host rejects a menu with duplicate ids.
+            id = "view.set:" .. views[index], value = views[index],
             label = l10n.tr(viewKeys[views[index]]),
             icon = glyph.settings, iconFont = "fluent",
             checked = cfg.view == views[index],
