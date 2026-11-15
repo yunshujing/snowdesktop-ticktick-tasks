@@ -236,7 +236,6 @@ local function palette(_context)
             ink = 0x1B1B21, ink2 = 0x4E4E58, muted = 0x71717B, faint = 0x9C9CA4,
             accent = 0x3D63F5, onAccent = 0xFFFFFF,
             good = 0x15803D, bad = 0xC9372B, warn = 0xA96A00,
-            track = 0x000000, trackAlpha = 0.08,
             priority = { [0] = 0x8A8A94, [1] = 0x1F5FBF, [3] = 0xA96A00, [5] = 0xC9372B },
             hair = 1,
         }
@@ -247,7 +246,6 @@ local function palette(_context)
         ink = 0xECECF1, ink2 = 0xC4C4CE, muted = 0x9A9AA6, faint = 0x6F6F7C,
         accent = 0x8FA5FF, onAccent = 0x101426,
         good = 0x6BD69B, bad = 0xF0786D, warn = 0xF0B44C,
-        track = 0xFFFFFF, trackAlpha = 0.14,
         priority = { [0] = 0x7C7C88, [1] = 0x86A8FF, [3] = 0xF0B44C, [5] = 0xF0786D },
         hair = 1,
     }
@@ -881,8 +879,13 @@ local function drawViewPills(f, midY, centerX, pillHeight, maxWidth)
     if maxWidth and total > maxWidth then return false end
 
     local x = centerX - total / 2
-    draw.rect(x, midY - pillHeight / 2, total, pillHeight, c.track, pillRadius,
-        c.trackAlpha)
+    -- Glass, like the card itself: the old track colour read as a grey slab over
+    -- the frosted background. The active segment is the same material at a
+    -- higher alpha, so switching views moves a lighter pane, not a new widget.
+    draw.rect(x, midY - pillHeight / 2, total, pillHeight, c.glass, pillRadius,
+        c.glassAlpha * 1.8)
+    draw.strokeRect(x, midY - pillHeight / 2, total, pillHeight, c.line,
+        pillRadius, f.hair, c.lineAlpha * 0.75)
 
     for index = 1, #views do
         local id = views[index]
@@ -890,7 +893,7 @@ local function drawViewPills(f, midY, centerX, pillHeight, maxWidth)
         local active = f.view == id
         if active then
             draw.rect(x, midY - pillHeight / 2, width, pillHeight, c.glass, pillRadius,
-                c.glassAlpha * 2.4)
+                c.glassAlpha * 3.4)
             draw.strokeRect(x, midY - pillHeight / 2, width, pillHeight, c.line,
                 pillRadius, f.hair, c.lineAlpha * 1.2)
         end
